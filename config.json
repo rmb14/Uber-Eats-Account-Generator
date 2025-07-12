@@ -1,0 +1,57 @@
+{
+    "proxy": "http://proxy_user:proxy_pass@proxy_host:proxy_port",
+    "proxy_enabled": false,
+    "endpoints": {
+      "submit_form": "https://auth.uber.com/v2/submit-form",
+      "submit_form_geo": "https://cn-geo1.uber.com/rt/silk-screen/submit-form"
+    },
+    "imap": {
+      "username": "your_email@gmail.com",
+      "password": "your_app_password",
+      "server": "imap.gmail.com",
+      "domain": "yourdomain.com"
+    },
+    "rate_limiting": {
+      "requests_per_minute": 10,
+      "cooldown_seconds": 60,
+      "max_retries": 3
+    },
+    "security": {
+      "use_proxy": true,
+      "rotate_user_agents": true,
+      "randomize_timing": true,
+      "min_delay_seconds": 5,
+      "max_delay_seconds": 15
+    },
+    "first_names": [
+      "James", "Mary", "John", "Patricia", "Robert", "Jennifer",
+      "Michael", "Linda", "William", "Elizabeth", "David", "Barbara",
+      "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah",
+      "Charles", "Karen", "Christopher", "Nancy", "Daniel", "Lisa"
+    ],
+    "last_names": [
+      "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia",
+      "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez",
+      "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore",
+      "Jackson", "Martin", "Lee", "Perez", "Thompson", "White"
+    ],
+    "user_agents": [
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15",
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15",
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+      "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 Chrome/132.0.0.0",
+      "Mozilla/5.0 (Linux; Android 11; K) AppleWebKit/537.36 Chrome/132.0.0.0",
+      "Mozilla/5.0 (Linux; Android 12; K) AppleWebKit/537.36 Chrome/132.0.0.0"
+    ],
+    "logging": {
+      "level": "INFO",
+      "file": "account_generator.log",
+      "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    },
+    "output": {
+      "accounts_file": "accounts.txt",
+      "save_format": "email:password",
+      "backup_enabled": true,
+      "backup_directory": "backups/"
+    }
+  }
