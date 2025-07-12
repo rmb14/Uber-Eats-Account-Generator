@@ -1,4 +1,4 @@
-# Account Generator Security Analysis Tool
+# Uber Eats Account Generator
 
 ## ⚠️ DISCLAIMER
 
