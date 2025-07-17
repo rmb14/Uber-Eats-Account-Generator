@@ -1,20 +1,9 @@
 # Uber Eats Account Generator
+Generate Uber Eats Accounts using IMAP or Hotmail Emails using Mobile Packets
 
 ## ⚠️ DISCLAIMER
 
-**This project is strictly for educational and research purposes only.** It is designed to help security professionals and students understand web automation vulnerabilities and implement better defenses. 
-
-**DO NOT USE THIS CODE FOR:**
-- Creating unauthorized accounts
-- Violating any Terms of Service
-- Any illegal or unethical activities
-- Production use of any kind
-
-**By using this code, you acknowledge that:**
-- You will use it only in controlled, educational environments
-- You understand the legal and ethical implications
-- You take full responsibility for your actions
-- The authors are not liable for any misuse
+This project was initially built for my personal education, as I was studying mobile requests using mitmproxy, and python requests and automation vs a bigger corporation with higher end security and a multi-step authentication process. That being said, this project is not intended to be used whatsoever as it is against Ubers TOS, and it is purely and only for educational purposes.
 
 ---
 
@@ -25,38 +14,28 @@
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
-- [Code Architecture](#code-architecture)
-- [Error Handling](#error-handling)
-- [Security Considerations](#security-considerations)
 - [Contributing](#contributing)
 - [License](#license)
 
-## 🚀 Features
+<h2 id="features">🚀 Features</h2>
 
-### Core Functionality
-- **Automated Request Flow**: Demonstrates how account creation workflows can be automated
-- **Email Integration**: Shows vulnerabilities in email-based verification systems
-- **Device Spoofing**: Illustrates how device fingerprints can be manipulated
-- **OTP Extraction**: Demonstrates automated OTP retrieval from emails
+ - Generate an email, name, and password automatically(email using gmails IMAP or given hotmail accounts user:pass format)
+ - Simulate an account creation process as an Iphone user, using mitmproxy to intercept requests and responses, and python asyncio and curl_cffi to automate the process.
+ - Extract the OTP from the email automatically using IMAP and BeautifulSoup.
+ - Save the account details to a file.
 
-### Educational Features
-- **Comprehensive Logging**: Detailed logs for understanding each step
-- **Error Handling**: Robust error management with educational messages
-- **Security Demonstrations**: Shows both attack vectors and defense mechanisms
-- **Modular Architecture**: Clean code structure for easy understanding
+ ### Additional Features
+  - Use imap domains to generate emails
+  - Automatically get OTP verification code from email
+  - Proxy support to avoid ip blocks
+  - Asynchronous and Session based requests
+  - Spoofing Device fingerprints and data(act like a real human)
+  - Logging
 
-### Security Research Tools
-- **Rate Limiting Examples**: Demonstrates proper rate limiting implementation
-- **Proxy Support**: Shows how requests can be routed through proxies
-- **Device Fingerprinting**: Illustrates various device spoofing techniques
-- **Session Management**: Demonstrates session handling vulnerabilities
-
-## 📦 Requirements
+<h2 id="requirements">📦 Requirements</h2>
 
 ### System Requirements
 - Python 3.8 or higher
-- pip (Python package manager)
-- Git (for cloning the repository)
 
 ### Python Dependencies
 ```txt
@@ -69,15 +48,13 @@ python-dotenv>=1.0.0
 
 ### Email Requirements
 - IMAP-enabled email account (for OTP extraction)
-- App-specific password (for Gmail/Outlook)
 
-## 🛠️ Installation
+<h2 id="installation">🛠️ Installation</h2>
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/account-generator-security-tool.git
-cd account-generator-security-tool
-pip install -r requirements.txt
+git clone https://github.com/yubunus/Uber-Eats-Account-Generator.git
+cd Uber-Eats-Account-Generator
 ```
 
 ### 2. Create Virtual Environment
@@ -93,19 +70,15 @@ source venv/bin/activate
 
 ### 3. Install Dependencies
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ### 4. Configure Settings
 ```bash
-# Copy example configuration
-cp config.example.json config.json
-
-# Edit with your settings
-nano config.json  # or use your preferred editor
+nano config.json
 ```
 
-## ⚙️ Configuration
+<h2 id="configuration">⚙️ Configuration</h2>
 
 ### Basic Configuration (config.json)
 
@@ -138,7 +111,7 @@ nano config.json  # or use your preferred editor
 | `rate_limiting.requests_per_minute` | Max requests per minute | 10 |
 | `security.randomize_timing` | Add random delays | true |
 
-## 💻 Usage
+<h2 id="usage">💻 Usage</h2>
 
 ### Basic Usage
 
@@ -155,61 +128,9 @@ python main.py --debug
 
 ### Menu Options
 
-1. **Generate using IMAP**: Uses configured IMAP email for OTP retrieval
-2. **Generate using Hotmail**: Uses Hotmail accounts from `hotmailaccs.txt`
+1. **Generate using IMAP**: Generates account using your personal domain and imap email
+2. **Generate using Hotmail**: Generates account using hotmail accounts from `hotmailaccs.txt` in `user:pass` format
 3. **Exit**: Safely exits the program
-
-### Example Workflow
-
-```python
-# Import the modules
-from main import AccountGenerator, IMAPClient
-from otp import EmailOTPExtractor
-
-# Initialize components
-generator = AccountGenerator('config.json')
-email_client = IMAPClient('email@gmail.com', 'password')
-
-# Run the workflow
-email = await generator.create_account('domain.com', email_client)
-```
-
-## 🏗️ Code Architecture
-
-### Main Components
-
-#### 1. **main.py**
-- `AccountGenerator`: Orchestrates the account creation workflow
-- `DeviceSpoofer`: Generates realistic device fingerprints
-- `RequestHandler`: Manages HTTP requests with retry logic
-- `CLIInterface`: Provides command-line interaction
-
-#### 2. **otp.py**
-- `IMAPClient`: Handles email server connections
-- `OTPExtractor`: Base class for OTP extraction strategies
-- `EmailOTPExtractor`: Main extraction implementation
-- `SecureOTPHandler`: Demonstrates secure OTP handling
-
-#### 3. **config.json**
-- Centralized configuration management
-- Security settings and rate limits
-
-### Class Hierarchy
-
-```
-RequestHandler
-    └── HTTP request management with proxy support
-
-AccountGenerator
-    ├── DeviceSpoofer (device fingerprinting)
-    ├── RequestHandler (network requests)
-    └── Workflow orchestration
-
-EmailOTPExtractor
-    ├── IMAPClient (email connections)
-    └── OTPExtractor implementations
-        └── UberOTPExtractor
-```
 
 ### Data Flow
 
@@ -220,54 +141,7 @@ EmailOTPExtractor
 5. **Registration**: Complete remaining steps
 6. **Finalization**: Save account details
 
-## 🚨 Error Handling
-
-### Built-in Error Types
-
-1. **Network Errors**: Automatic retry with exponential backoff
-2. **Authentication Errors**: Clear messages about credentials
-3. **Parsing Errors**: Detailed logging for debugging
-4. **Timeout Errors**: Configurable timeout periods
-
-### Error Recovery
-
-```python
-try:
-    result = await generator.create_account(domain, email_client)
-except NetworkError:
-    # Automatic retry logic
-except AuthenticationError:
-    # Credential validation
-except TimeoutError:
-    # Timeout handling
-```
-
-### Logging Levels
-
-- **DEBUG**: Detailed execution flow
-- **INFO**: Normal operation events
-- **WARNING**: Potential issues
-- **ERROR**: Operation failures
-- **CRITICAL**: System failures
-
-## 🔒 Security Considerations
-
-### For Defenders
-
-1. **Implement CAPTCHA**: Add human verification
-2. **Device Fingerprinting**: Use advanced fingerprinting
-3. **Rate Limiting**: Limit requests per IP/device
-4. **Email Verification**: Use secure email verification
-5. **Behavioral Analysis**: Monitor for automated patterns
-
-### For Researchers
-
-1. **Session Management**: Understanding authentication flows
-2. **Fingerprinting Spoofing**: Device identification bypass
-3. **Timing Analysis**: Avoiding detection through delays
-4. **Proxy Rotation**: Understanding proxy chains
-
-## 🤝 Contributing
+<h2 id="contributing">🤝 Contributing</h2>
 
 We welcome contributions that enhance the educational value of this project:
 
@@ -282,9 +156,8 @@ We welcome contributions that enhance the educational value of this project:
 - Focus on educational value
 - Add comprehensive documentation
 - Include security implications
-- Follow PEP 8 style guide
 
-## 📄 License
+<h2 id="license">📄 License</h2>
 
 This project is licensed under the **MIT License with Educational Use Clause** - see the [LICENSE](LICENSE) file for details.
 
