@@ -113,6 +113,11 @@ class IMAPClient:
             logger.error(f"Failed to fetch email: {e}")
             return None
 
+class OTPExtractor:
+    def extract(self, content: str) -> Optional[str]:
+        """Extract OTP from content"""
+        raise NotImplementedError
+
 class UberOTPExtractor(OTPExtractor):
     """Extracts OTP from Uber emails"""
     
