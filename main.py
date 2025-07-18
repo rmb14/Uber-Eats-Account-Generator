@@ -5,6 +5,7 @@ WARNING: This code is for educational purposes only.
 Do not use for actual account creation or unauthorized activities.
 """
 
+
 import json
 import uuid
 import random
@@ -12,7 +13,6 @@ import asyncio
 import time
 from typing import Dict, Optional, Tuple, List
 from dataclasses import dataclass, asdict
-from abc import ABC, abstractmethod
 from pathlib import Path
 
 from curl_cffi import requests
@@ -90,7 +90,7 @@ class RequestHandler:
     
     def __init__(self, config: Dict):
         self.config = config
-        self.proxy = config.get('proxy')
+        self.proxy = config.get('proxy', None)
         self.proxies = {
             'http': self.proxy,
             'https': self.proxy
@@ -163,19 +163,28 @@ class AccountGenerator:
         """Get request headers based on variant"""
         base_headers = {
             "Accept": "*/*",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
             "Accept-Language": "en-US,en;q=0.9",
             "Content-Type": "application/json",
-            "X-Uber-Client-Name": "eats",
+            "Host": "cn-geo1.uber.com",
+            "Origin": "https://auth.uber.com",
+            "Referer": "https://auth.uber.com/",
+            "Sec-Ch-Ua": "\"Not A(Brand\";v=\"8\", \"Chromium\";v=\"132\", \"Google Chrome\";v=\"132\"",
+            "Sec-Ch-Ua-Mobile": "?1",
+            "Sec-Ch-Ua-Platform": "\"Android\"",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-site",
+            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36",
+            "Via": "1.1 martian-a6a2b0967dba8230c0eb",
+            "X-Uber-Analytics-Session-Id": "ecf13d6e-caa1-4848-9cc8-deb332d3212e",
+            "X-Uber-App-Device-Id": "cea7e57f-cf80-397c-909c-241a9384b974",
             "X-Uber-App-Variant": "ubereats",
-            "X-Uber-Client-Id": "com.ubercab.UberEats",
-            "X-Uber-Device": "iphone",
+            "X-Uber-Client-Id": "com.ubercab.eats",
+            "X-Uber-Client-Name": "eats",
+            "X-Uber-Client-Version": "6.129.10001",
+            "X-Uber-Device-Udid": "248e7351-7757-40ce-b63d-c931d5ea8e54",
         }
-        
-        if variant == "standard":
-            base_headers.update({
-                "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36",
-                "X-Uber-Client-Version": "6.129.10001",
-            })
         
         return base_headers
     
@@ -187,25 +196,75 @@ class AccountGenerator:
                 "formAnswer": {
                     "flowType": "INITIAL",
                     "standardFlow": True,
+                    "accountManagementFlow": False,
+                    "daffFlow": False,
+                    "productConstraints": {
+                        "isEligibleForWebOTPAutofill": False,
+                        "uslFELibVersion": "",
+                        "uslMobileLibVersion": "",
+                        "isWhatsAppAvailable": False,
+                        "isPublicKeyCredentialSupported": True,
+                        "isFacebookAvailable": False,
+                        "isGoogleAvailable": False,
+                        "isRakutenAvailable": False,
+                        "isKakaoAvailable": False
+                    },
+                    "additionalParams": {
+                        "isEmailUpdatePostAuth": False
+                    },
                     "deviceData": json.dumps(asdict(self.device_info)),
                     "codeChallenge": "XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
+                    "uslURL": "https://auth.uber.com/v2?x-uber-device=iphone&x-uber-client-name=eats&x-uber-client-version=6.213.10001&x-uber-client-id=com.ubercab.UberEats&countryCode=US&firstPartyClientID=S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z&isiOSCustomTabSessionClose=true&showPasskeys=true&x-uber-app-variant=ubereats&x-uber-hot-launch-id=7AE26A95-AC62-4DB2-BF6E-E36308EBDCFD&socialNative=afg&x-uber-cold-launch-id=2A5D3FCB-0D28-48D5-81D7-5224D5C963C1&x-uber-device-udid=6968C387-69C6-48B6-9600-51986944428C&is_root=false&known_user=true&codeChallenge=XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
                     "firstPartyClientID": "S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z",
-                    "screenAnswers": [{
-                        "screenType": "PHONE_NUMBER_INITIAL",
-                        "eventType": "TypeInputEmail",
-                        "fieldAnswers": [{
-                            "fieldType": "EMAIL_ADDRESS",
-                            "emailAddress": email
-                        }]
-                    }]
+                    "screenAnswers": [
+                        {
+                            "screenType": "PHONE_NUMBER_INITIAL",
+                            "eventType": "TypeInputEmail",
+                            "fieldAnswers": [
+                                {
+                                    "fieldType": "EMAIL_ADDRESS",
+                                    "emailAddress": email
+                                }
+                            ]
+                        }
+                    ],
+                    "appContext": {
+                        "socialNative": "afg"
+                    }
                 }
             }
         }
+
+        headers = {
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Content-Type": "application/json",
+            "Host": "auth.uber.com",
+            "Origin": "https://auth.uber.com",
+            "Sec-Ch-Ua": "\"Not A(Brand\";v=\"8\", \"Chromium\";v=\"132\", \"Google Chrome\";v=\"132\"",
+            "Sec-Ch-Ua-Mobile": "?1",
+            "Sec-Ch-Ua-Platform": "\"Android\"",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.26",
+            "Via": "1.1 martian-a6a2b2967dba8230c0eb",
+            "X-Csrf-Token": "x",
+            "X-Uber-Analytics-Session-Id": "ecf13d6e-cab1-4848-9cc8-deb332d3212e",
+            "X-Uber-App-Device-Id": "cea7e57f-cf80-397c-709c-241a9384b974",
+            "X-Uber-App-Variant": "ubereats",
+            "X-Uber-Client-Id": "com.ubercab.eats",
+            "X-Uber-Client-Name": "eats",
+            "X-Uber-Client-Version": "6.129.10201",
+            "X-Uber-Device": "android",
+            "X-Uber-Device-Udid": "248e7351-7757-40ce-b64d-c931d5ea8e54",
+    }
         
         response = await self.request_handler.post(
             "Email Signup",
             self.config['endpoints']['submit_form'],
-            self._get_headers(),
+            headers,
             data
         )
         
@@ -221,15 +280,36 @@ class AccountGenerator:
                 "formAnswer": {
                     "flowType": "SIGN_UP",
                     "standardFlow": True,
-                    "deviceData": json.dumps(asdict(self.device_info)),
-                    "screenAnswers": [{
-                        "screenType": "EMAIL_OTP_CODE",
-                        "eventType": "TypeEmailOTP",
-                        "fieldAnswers": [{
-                            "fieldType": "EMAIL_OTP_CODE",
-                            "emailOTPCode": otp
-                        }]
-                    }]
+                    "accountManagementFlow": False,
+                    "daffFlow": False,
+                    "productConstraints": {
+                        "isEligibleForWebOTPAutofill": False,
+                        "uslFELibVersion": "",
+                        "uslMobileLibVersion": "1.107",
+                        "isWhatsAppAvailable": False,
+                        "isPublicKeyCredentialSupported": True,
+                        "isFacebookAvailable": False,
+                        "isRakutenAvailable": False,
+                        "isKakaoAvailable": False
+                    },
+                    "additionalParams": {
+                        "isEmailUpdatePostAuth": False
+                    },
+                    "deviceData": "",
+                    "codeChallenge": "eMw_kvmk5MNvtMZkvYWSpZcib4Jvd0M148zSahclT3w",
+                    "firstPartyClientID": "S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z",
+                    "screenAnswers": [
+                        {
+                            "screenType": "EMAIL_OTP_CODE",
+                            "eventType": "TypeEmailOTP",
+                            "fieldAnswers": [
+                                {
+                                    "fieldType": "EMAIL_OTP_CODE",
+                                    "emailOTPCode": otp
+                                }
+                            ]
+                        }
+                    ]
                 }
             }
         }
@@ -275,20 +355,55 @@ class AccountGenerator:
                 "formAnswer": {
                     "flowType": "PROGRESSIVE_SIGN_UP",
                     "standardFlow": True,
-                    "deviceData": json.dumps(asdict(self.device_info)),
-                    "screenAnswers": [{
-                        "screenType": "SKIP",
-                        "eventType": "TypeSkip",
-                        "fieldAnswers": []
-                    }]
+                    "accountManagementFlow": False,
+                    "daffFlow": False,
+                    "productConstraints": {
+                        "isEligibleForWebOTPAutofill": False,
+                        "uslFELibVersion": "",
+                        "uslMobileLibVersion": "",
+                        "isWhatsAppAvailable": False,
+                        "isPublicKeyCredentialSupported": True,
+                        "isFacebookAvailable": False,
+                        "isGoogleAvailable": False,
+                        "isRakutenAvailable": False,
+                        "isKakaoAvailable": False
+                    },
+                    "additionalParams": {
+                        "isEmailUpdatePostAuth": False
+                    },
+                    "deviceData": "{\"epoch\":1744515031438.7422,\"locationServiceEnabled\":false,\"deviceName\":\"iPhone\",\"batteryStatus\":\"full\",\"ipAddress\":\"192.168.1.192\",\"deviceOsName\":\"iOS\",\"libCount\":798,\"versionChecksum\":\"3EBBC1C9-7121-3FAD-B2F9-D583E923BCB8\",\"cpuAbi\":\"16777228-1\",\"deviceIds\":{\"advertiserId\":\"00000000-0000-0000-0000-000000000000\",\"perfId\":\"5BD175B2-34B2-5F7C-AC9B-1E7C95E30F4D\",\"vendorId\":\"E1AACDAB-9CDC-4E1D-91D6-3D64429FA6C4\",\"uberId\":\"6968C387-69C6-48B6-9600-51986944428C\"},\"sourceApp\":\"eats\",\"version\":\"6.213.10001\",\"deviceOsVersion\":\"15.8.4\",\"wifiConnected\":true,\"envChecksum\":\"730f96a786fb9d89f39ff62a8b68f8a1\",\"rooted\":false,\"envId\":\"ed5d1b6a92a39c69a5ffd24904a3eca8\",\"batteryLevel\":1,\"deviceModel\":\"iPhone8,4\"}",
+                    "codeChallenge": "XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
+                    "uslURL": "https://auth.uber.com/v2?x-uber-device=iphone&x-uber-client-name=eats&x-uber-client-version=6.213.10001&x-uber-client-id=com.ubercab.UberEats&countryCode=US&firstPartyClientID=S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z&isiOSCustomTabSessionClose=true&showPasskeys=true&x-uber-app-variant=ubereats&x-uber-hot-launch-id=7AE26A95-AC62-4DB2-BF6E-E36308EBDCFD&socialNative=afg&x-uber-cold-launch-id=2A5D3FCB-0D28-48D5-81D7-5224D5C963C1&x-uber-device-udid=6968C387-69C6-48B6-9600-51986944428C&is_root=false&known_user=true&codeChallenge=XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
+                    "firstPartyClientID": "S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z",
+                    "screenAnswers": [
+                        {
+                            "screenType": "SKIP",
+                            "eventType": "TypeSkip",
+                            "fieldAnswers": []
+                        }
+                    ]
                 }
             }
+        }
+
+        headers = {
+            'Referer': 'https://auth.uber.com/',
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_8_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+            'X-Uber-Client-Version': '6.213.10001',
+            'X-Uber-Client-Name': 'eats',
+            'X-Uber-App-Variant': 'ubereats',
+            'Origin': 'https://auth.uber.com',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'X-Uber-Client-Id': 'com.ubercab.UberEats',
+            'Accept': '*/*',
+            'Content-Type': 'application/json',
+            'X-Uber-Device': 'iphone',
         }
         
         response = await self.request_handler.post(
             "Skip Submit",
             self.config['endpoints']['submit_form_geo'],
-            self._get_headers("mobile"),
+            headers,
             data
         )
         
@@ -306,23 +421,58 @@ class AccountGenerator:
                 "formAnswer": {
                     "flowType": "PROGRESSIVE_SIGN_UP",
                     "standardFlow": True,
-                    "deviceData": json.dumps(asdict(self.device_info)),
-                    "screenAnswers": [{
-                        "screenType": "FULL_NAME_PROGRESSIVE",
-                        "eventType": "TypeInputNewUserFullName",
-                        "fieldAnswers": [
-                            {
-                                "fieldType": "FIRST_NAME",
-                                "firstName": first_name
-                            },
-                            {
-                                "fieldType": "LAST_NAME",
-                                "lastName": last_name
-                            }
-                        ]
-                    }]
+                    "accountManagementFlow": False,
+                    "daffFlow": False,
+                    "productConstraints": {
+                        "isEligibleForWebOTPAutofill": False,
+                        "uslFELibVersion": "",
+                        "uslMobileLibVersion": "",
+                        "isWhatsAppAvailable": False,
+                        "isPublicKeyCredentialSupported": True,
+                        "isFacebookAvailable": False,
+                        "isGoogleAvailable": False,
+                        "isRakutenAvailable": False,
+                        "isKakaoAvailable": False
+                    },
+                    "additionalParams": {
+                        "isEmailUpdatePostAuth": False
+                    },
+                    "deviceData": "{\"epoch\":1744515031438.7422,\"locationServiceEnabled\":false,\"deviceName\":\"iPhone\",\"batteryStatus\":\"full\",\"ipAddress\":\"192.168.1.192\",\"deviceOsName\":\"iOS\",\"libCount\":798,\"versionChecksum\":\"3EBBC1C9-7121-3FAD-B2F9-D583E923BCB8\",\"cpuAbi\":\"16777228-1\",\"deviceIds\":{\"advertiserId\":\"00000000-0000-0000-0000-000000000000\",\"perfId\":\"5BD175B2-34B2-5F7C-AC9B-1E7C95E30F4D\",\"vendorId\":\"E1AACDAB-9CDC-4E1D-91D6-3D64429FA6C4\",\"uberId\":\"6968C387-69C6-48B6-9600-51986944428C\"},\"sourceApp\":\"eats\",\"version\":\"6.213.10001\",\"deviceOsVersion\":\"15.8.4\",\"wifiConnected\":true,\"envChecksum\":\"730f96a786fb9d89f39ff62a8b68f8a1\",\"rooted\":false,\"envId\":\"ed5d1b6a92a39c69a5ffd24904a3eca8\",\"batteryLevel\":1,\"deviceModel\":\"iPhone8,4\"}",
+                    "codeChallenge": "XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
+                    "uslURL": "https://auth.uber.com/v2?x-uber-device=iphone&x-uber-client-name=eats&x-uber-client-version=6.213.10001&x-uber-client-id=com.ubercab.UberEats&countryCode=US&firstPartyClientID=S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z&isiOSCustomTabSessionClose=true&showPasskeys=true&x-uber-app-variant=ubereats&x-uber-hot-launch-id=7AE26A95-AC62-4DB2-BF6E-E36308EBDCFD&socialNative=afg&x-uber-cold-launch-id=2A5D3FCB-0D28-48D5-81D7-5224D5C963C1&x-uber-device-udid=6968C387-69C6-48B6-9600-51986944428C&is_root=false&known_user=true&codeChallenge=XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
+                    "firstPartyClientID": "S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z",
+                    "screenAnswers": [
+                        {
+                            "screenType": "FULL_NAME_PROGRESSIVE",
+                            "eventType": "TypeInputNewUserFullName",
+                            "fieldAnswers": [
+                                {
+                                    "fieldType": "FIRST_NAME",
+                                    "firstName": first_name
+                                },
+                                {
+                                    "fieldType": "LAST_NAME",
+                                    "lastName": last_name
+                                }
+                            ]
+                        }
+                    ]
                 }
             }
+        }
+
+        headers = {
+            'Referer': 'https://auth.uber.com/',
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_8_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+            'X-Uber-Client-Version': '6.213.10001',
+            'X-Uber-Client-Name': 'eats',
+            'X-Uber-App-Variant': 'ubereats',
+            'Origin': 'https://auth.uber.com',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'X-Uber-Client-Id': 'com.ubercab.UberEats',
+            'Accept': '*/*',
+            'Content-Type': 'application/json',
+            'X-Uber-Device': 'iphone',
         }
         
         response = await self.request_handler.post(
@@ -339,13 +489,33 @@ class AccountGenerator:
     async def _submit_legal_confirmation(self, session_id: str) -> Tuple[Optional[str], Optional[str]]:
         """Submit legal confirmation"""
         data = {
-            "formContainerAnswer": {
-                "inAuthSessionID": session_id,
-                "formAnswer": {
-                    "flowType": "SIGN_UP",
-                    "standardFlow": True,
-                    "deviceData": json.dumps(asdict(self.device_info)),
-                    "screenAnswers": [{
+        "formContainerAnswer": {
+            "inAuthSessionID": session_id,
+            "formAnswer": {
+                "flowType": "SIGN_UP",
+                "standardFlow": True,
+                "accountManagementFlow": False,
+                "daffFlow": False,
+                "productConstraints": {
+                    "isEligibleForWebOTPAutofill": False,
+                    "uslFELibVersion": "",
+                    "uslMobileLibVersion": "",
+                    "isWhatsAppAvailable": False,
+                    "isPublicKeyCredentialSupported": True,
+                    "isFacebookAvailable": False,
+                    "isGoogleAvailable": False,
+                    "isRakutenAvailable": False,
+                    "isKakaoAvailable": False
+                },
+                "additionalParams": {
+                    "isEmailUpdatePostAuth": False
+                },
+                "deviceData": "{\"epoch\":1744515031438.7422,\"locationServiceEnabled\":false,\"deviceName\":\"iPhone\",\"batteryStatus\":\"full\",\"ipAddress\":\"192.168.1.192\",\"deviceOsName\":\"iOS\",\"libCount\":798,\"versionChecksum\":\"3EBBC1C9-7121-3FAD-B2F9-D583E923BCB8\",\"cpuAbi\":\"16777228-1\",\"deviceIds\":{\"advertiserId\":\"00000000-0000-0000-0000-000000000000\",\"perfId\":\"5BD175B2-34B2-5F7C-AC9B-1E7C95E30F4D\",\"vendorId\":\"E1AACDAB-9CDC-4E1D-91D6-3D64429FA6C4\",\"uberId\":\"6968C387-69C6-48B6-9600-51986944428C\"},\"sourceApp\":\"eats\",\"version\":\"6.213.10001\",\"deviceOsVersion\":\"15.8.4\",\"wifiConnected\":true,\"envChecksum\":\"730f96a786fb9d89f39ff62a8b68f8a1\",\"rooted\":false,\"envId\":\"ed5d1b6a92a39c69a5ffd24904a3eca8\",\"batteryLevel\":1,\"deviceModel\":\"iPhone8,4\"}",
+                "codeChallenge": "XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
+                "uslURL": "https://auth.uber.com/v2?x-uber-device=iphone&x-uber-client-name=eats&x-uber-client-version=6.213.10001&x-uber-client-id=com.ubercab.UberEats&countryCode=US&firstPartyClientID=S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z&isiOSCustomTabSessionClose=true&showPasskeys=true&x-uber-app-variant=ubereats&x-uber-hot-launch-id=7AE26A95-AC62-4DB2-BF6E-E36308EBDCFD&socialNative=afg&x-uber-cold-launch-id=2A5D3FCB-0D28-48D5-81D7-5224D5C963C1&x-uber-device-udid=6968C387-69C6-48B6-9600-51986944428C&is_root=false&known_user=true&codeChallenge=XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
+                "firstPartyClientID": "S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z",
+                "screenAnswers": [
+                    {
                         "screenType": "LEGAL",
                         "eventType": "TypeSignupLegal",
                         "fieldAnswers": [
@@ -356,15 +526,33 @@ class AccountGenerator:
                             {
                                 "fieldType": "LEGAL_CONFIRMATIONS",
                                 "legalConfirmations": {
-                                    "legalConfirmations": [{
-                                        "isAccepted": True
-                                    }]
+                                    "legalConfirmations": [
+                                        {
+                                            "disclosureVersionUUID": "ef1d61c9-b09e-4d44-8cfb-ddfa15cc7523",
+                                            "isAccepted": True
+                                        }
+                                    ]
                                 }
                             }
                         ]
-                    }]
-                }
+                    }
+                ]
             }
+        }
+    }
+
+        headers = {
+            'Referer': 'https://auth.uber.com/',
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_8_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+            'X-Uber-Client-Version': '6.213.10001',
+            'X-Uber-Client-Name': 'eats',
+            'X-Uber-App-Variant': 'ubereats',
+            'Origin': 'https://auth.uber.com',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'X-Uber-Client-Id': 'com.ubercab.UberEats',
+            'Accept': '*/*',
+            'Content-Type': 'application/json',
+            'X-Uber-Device': 'iphone',
         }
         
         response = await self.request_handler.post(
@@ -392,27 +580,60 @@ class AccountGenerator:
         data = {
             "formContainerAnswer": {
                 "formAnswer": {
-                    "screenAnswers": [{
-                        "fieldAnswers": [
-                            {
-                                "sessionVerificationCode": auth_code,
-                                "fieldType": "SESSION_VERIFICATION_CODE"
-                            },
-                            {
-                                "codeVerifier": "zZlmodq2L3ly2tJu6GqOa7Yx7AjJpx3TpiXWFfhUDsZ1QSgTObHzgKn5IBLDxtQBd6Gpj8z1BZki6SwEIg2WRg--",
-                                "fieldType": "CODE_VERIFIER"
-                            }
-                        ],
-                        "eventType": "TypeVerifySession",
-                        "screenType": "SESSION_VERIFICATION"
-                    }],
+                    "screenAnswers": [
+                        {
+                            "fieldAnswers": [
+                                {
+                                    "sessionVerificationCode": auth_code,
+                                    "fieldType": "SESSION_VERIFICATION_CODE",
+                                    "daffAcrValues": []
+                                },
+                                {
+                                    "codeVerifier": "zZlmodq2L3ly2tJu6GqOa7Yx7AjJpx3TpiXWFfhUDsZ1QSgTObHzgKn5IBLDxtQBd6Gpj8z1BZki6SwEIg2WRg--",
+                                    "fieldType": "CODE_VERIFIER",
+                                    "daffAcrValues": []
+                                }
+                            ],
+                            "eventType": "TypeVerifySession",
+                            "screenType": "SESSION_VERIFICATION"
+                        }
+                    ],
                     "standardFlow": True,
-                    "deviceData": json.dumps(asdict(self.device_info)),
+                    "deviceData": "{\"envId\":\"ed5d1b6a92a39c69a5ffd24904a3eca8\",\"deviceName\":\"iPhone\",\"version\":\"6.213.10001\",\"deviceOsName\":\"iOS\",\"rooted\":false,\"locationServiceEnabled\":false,\"deviceOsVersion\":\"15.8.4\",\"batteryStatus\":\"full\",\"envChecksum\":\"730f96a786fb9d89f39ff62a8b68f8a1\",\"deviceIds\":{\"advertiserId\":\"00000000-0000-0000-0000-000000000000\",\"uberId\":\"6968C387-69C6-48B6-9600-51986944428C\",\"perfId\":\"5BD175B2-34B2-5F7C-AC9B-1E7C95E30F4D\",\"vendorId\":\"E1AACDAB-9CDC-4E1D-91D6-3D64429FA6C4\"},\"ipAddress\":\"192.168.1.192\",\"sourceApp\":\"eats\",\"batteryLevel\":1,\"epoch\":1744515031438.7422,\"deviceModel\":\"iPhone8,4\",\"libCount\":798,\"wifiConnected\":true,\"cpuAbi\":\"16777228-1\",\"versionChecksum\":\"3EBBC1C9-7121-3FAD-B2F9-D583E923BCB8\"}",
                     "firstPartyClientID": "S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z",
                     "flowType": "SIGN_IN"
                 },
                 "inAuthSessionID": f"{session_id}.{auth_code}"
             }
+        }
+
+        headers = {
+            'Accept': '*/*',
+            'X-Uber-Device-Location-Services-Enabled': '0',
+            'X-Uber-Device-Language': 'en_US',
+            'User-Agent': '/iphone/6.213.10001',
+            'X-Uber-Eats-App-Installed': '0',
+            'X-Uber-App-Lifecycle-State': 'foreground',
+            'X-Uber-Request-Uuid': str(uuid.uuid4()),
+            'X-Uber-Device-Time-24-Format-Enabled': '0',
+            'X-Uber-Device-Location-Provider': 'ios_core',
+            'X-Uber-Markup-Textformat-Version': '1',
+            'X-Uber-Device-Voiceover': '0',
+            'X-Uber-Device-Model': 'iPhone8,4',
+            'Accept-Language': 'en-US;q=1',
+            'X-Uber-Redirectcount': '0',
+            'X-Uber-Device-Os': '15.8.4',
+            'X-Uber-Network-Classifier': 'fast',
+            'X-Uber-Client-Version': '6.213.10001',
+            'X-Uber-App-Variant': 'ubereats',
+            'X-Uber-Device-Id-Tracking-Enabled': '0',
+            'X-Uber-Client-Id': 'com.ubercab.UberEats',
+            'X-Uber-Client-Name': 'eats',
+            'Content-Type': 'application/json',
+            'X-Uber-Device': 'iphone',
+            'X-Uber-Client-User-Session-Id': 'D7354EFE-AFB4-439E-8C9F-1AB8047DF1B5',
+            'X-Uber-Device-Ids': 'aaid:00000000-0000-0000-0000-000000000000',
+            'X-Uber-Device-Id': '6968C387-69C6-48B6-9600-51986944428C',
         }
         
         response = await self.request_handler.post(
@@ -427,6 +648,9 @@ class AccountGenerator:
     async def create_account(self, domain: str, email_client: IMAPClient) -> Optional[str]:
         """Main account creation workflow"""
         email, name = self.generate_user_info(domain)
+        if domain == 'hotmail.com':
+            email = email_client.username
+
         print(f"\n{Fore.CYAN}[*] Creating account for: {email}")
         
         # Start signup
@@ -549,8 +773,9 @@ class CLIInterface:
                 email_client = IMAPClient(
                     username,
                     password,
-                    'imap.zmailservice.com'
+                    'outlook.office365.com'
                 )
+                email_client.username = username
                 
                 await self.generator.create_account('hotmail.com', email_client)
                 
