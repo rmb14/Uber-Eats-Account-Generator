@@ -1,8 +1,6 @@
 """
 OTP (One-Time Password) Extraction for Email Verification
-
 """
-
 import imaplib
 import email
 import re
@@ -12,7 +10,7 @@ from bs4 import BeautifulSoup
 from email.message import Message
 import logging
 from datetime import datetime, timedelta
-
+import time
 
 # Configure logging
 logging.basicConfig(
@@ -21,11 +19,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 class EmailParsingError(Exception):
     """Custom exception for email parsing errors. TODO"""
     pass
-
 
 class IMAPClient:
     """Handles IMAP email server connections"""
@@ -51,13 +47,14 @@ class IMAPClient:
         if '@gmail.com' in username:
             return 'imap.gmail.com'
         elif '@hotmail.com' in username or '@outlook.com' in username:
-            return 'imap.zmailservice.com'
+            return 'outlook.office365.com'
         else:
             return 'imap.gmail.com'  # Default
     
     def connect(self) -> bool:
         """Establish connection to IMAP server"""
         try:
+            print(f"Connecting to {self.server} with port {self.port} with username {self.username} and password {self.password}")
             self.connection = imaplib.IMAP4_SSL(self.server, self.port)
             self.connection.login(self.username, self.password)
             logger.info(f"Successfully connected to {self.server}")
@@ -116,15 +113,6 @@ class IMAPClient:
             logger.error(f"Failed to fetch email: {e}")
             return None
 
-
-class OTPExtractor:
-    """Base class for OTP extraction strategies"""
-    
-    def extract(self, content: str) -> Optional[str]:
-        """Extract OTP from content"""
-        raise NotImplementedError
-
-
 class UberOTPExtractor(OTPExtractor):
     """Extracts OTP from Uber emails"""
     
@@ -140,27 +128,59 @@ class UberOTPExtractor(OTPExtractor):
         try:
             soup = BeautifulSoup(html_content, 'html.parser')
             
-            # Method 1: Look for specific class
+            # Method 1: Look for class="p1b" which contains the OTP in bold
+            otp_element = soup.find('td', class_='p1b')
+            if otp_element:
+                text = otp_element.get_text(strip=True)
+                if text.isdigit() and len(text) == 4:
+                    return text
+            
+            # Method 2: Look for specific class
             otp_element = soup.find('td', class_='p2b')
             if otp_element:
                 text = otp_element.get_text(strip=True)
                 if text.isdigit() and len(text) == 4:
                     return text
             
-            # Method 2: Search for verification text
-            verification_text = soup.find(string=re.compile(r'verification code', re.I))
-            if verification_text:
-                parent = verification_text.parent
-                if parent:
+            # Method 3: Look for elements that contain "verification code" and find nearby 4-digit numbers
+            verification_elements = soup.find_all(string=re.compile(r'verification code', re.I))
+            for element in verification_elements:
+                # Look in the next few siblings for a 4-digit number
+                if element.parent:
+                    parent = element.parent
+                    # Search in the parent's next siblings
                     for sibling in parent.find_next_siblings():
                         if sibling.name:
                             text = sibling.get_text(strip=True)
                             if text.isdigit() and len(text) == 4:
                                 return text
+                    
+                    # Also search in the parent's parent structure
+                    if parent.parent:
+                        grandparent = parent.parent
+                        for sibling in grandparent.find_next_siblings():
+                            if sibling.name:
+                                # Look for 4-digit numbers in this sibling
+                                digit_elements = sibling.find_all(string=re.compile(r'\b\d{4}\b'))
+                                for digit_element in digit_elements:
+                                    text = digit_element.strip()
+                                    if text.isdigit() and len(text) == 4:
+                                        return text
             
-            # Method 3: Look in white boxes
+            # Method 4: Look for bold text that contains 4 digits
+            bold_elements = soup.find_all(['b', 'strong']) + soup.find_all('td', class_=re.compile(r'bold|p1b|p2b'))
+            for element in bold_elements:
+                text = element.get_text(strip=True)
+                if text.isdigit() and len(text) == 4:
+                    return text
+            
+            # Method 5: Look in white boxes or specific background colors
             white_boxes = soup.find_all('td', style=re.compile(r'background-color:\s*#ffffff', re.I))
             for box in white_boxes:
+                text = box.get_text(strip=True)
+                if text.isdigit() and len(text) == 4:
+                    return text
+                # Also check for patterns within the box
                 for pattern in self.OTP_PATTERNS:
                     match = re.search(pattern, str(box))
                     if match:
@@ -168,20 +188,19 @@ class UberOTPExtractor(OTPExtractor):
                         if code.isdigit() and len(code) == 4:
                             return code
             
-            # Method 4: General text search
+            # Method 6: General text search for 4-digit numbers
             text_content = soup.get_text()
-            for pattern in self.OTP_PATTERNS:
-                matches = re.findall(pattern, text_content, re.I)
-                for match in matches:
-                    if isinstance(match, str) and match.isdigit() and len(match) == 4:
-                        return match
+            four_digit_numbers = re.findall(r'\b\d{4}\b', text_content)
+            for number in four_digit_numbers:
+                # Filter out common non-OTP 4-digit numbers
+                if number not in ['2024', '2025', '2023', '2022', '1999', '2000']:
+                    return number
             
             return None
             
         except Exception as e:
             logger.error(f"OTP extraction failed: {e}")
             return None
-
 
 class EmailOTPExtractor:
     def __init__(self):
@@ -233,7 +252,7 @@ class EmailOTPExtractor:
                             return otp
                 
                 # Wait before checking again
-                asyncio.sleep(2)
+                time.sleep(2)
             
             logger.warning(f"Timeout waiting for OTP email")
             return None
@@ -261,6 +280,7 @@ class EmailOTPExtractor:
                         html_str = html_content.decode('utf-8', errors='ignore')
                         otp = extractor.extract(html_str)
                         if otp:
+                            print(f"Found OTP in HTML: {otp}")
                             return otp
                 
                 elif content_type == 'text/plain':
@@ -273,6 +293,7 @@ class EmailOTPExtractor:
                             if match:
                                 code = match.group(1) if match.lastindex else match.group(0)
                                 if code.isdigit() and len(code) == 4:
+                                    print(f"Found OTP in plain text: {code}")
                                     return code
             
             return None
@@ -288,7 +309,6 @@ class EmailOTPExtractor:
         service: str = 'uber',
         timeout: int = 60
     ) -> Optional[str]:
-        """Async wrapper for OTP extraction"""
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
             None,
@@ -300,56 +320,19 @@ class EmailOTPExtractor:
         )
 
 
-class SecureOTPHandler:
-    def __init__(self):
-        self.rate_limiter = {}
-        self.max_attempts = 3
-        self.cooldown_period = 300  # 5 minutes
-    
-    def validate_otp_request(self, email: str) -> bool:
-        """Check if OTP request is within rate limits"""
-        current_time = datetime.now()
-        
-        if email in self.rate_limiter:
-            last_attempt, attempts = self.rate_limiter[email]
-            
-            # Check cooldown
-            if (current_time - last_attempt).seconds < self.cooldown_period:
-                if attempts >= self.max_attempts:
-                    logger.warning(f"Rate limit exceeded for {email}")
-                    return False
-            else:
-                # Reset after cooldown
-                self.rate_limiter[email] = (current_time, 1)
-                return True
-            
-            # Update attempts
-            self.rate_limiter[email] = (current_time, attempts + 1)
-            return attempts < self.max_attempts
-        else:
-            # First attempt
-            self.rate_limiter[email] = (current_time, 1)
-            return True
-    
-    def generate_secure_otp(self, length: int = 6) -> str:
-        """Generate cryptographically secure OTP"""
-        import secrets
-        return ''.join(secrets.choice('0123456789') for _ in range(length))
-    
-    def hash_otp(self, otp: str) -> str:
-        """Hash OTP for storage"""
-        import hashlib
-        return hashlib.sha256(otp.encode()).hexdigest()
 
+#SAMPLE(used for testing, do not run this otp.py file directly unless u wanna test too)
+async def main():
+    otp_extractor = EmailOTPExtractor()
+    otp = await otp_extractor.get_otp_async(
+        IMAPClient(
+            'email@gmail.com',
+            'app password here',
+            'imap.gmail.com'
+        ),
+        'email@gmail.com'
+    )
+    print(f"Final OTP: {otp}")
 
-# Legacy function for backwards compatibility
-def get_otp_from_email(username: str, password: str, target_email: str) -> Optional[str]:
-    client = IMAPClient(username, password)
-    extractor = EmailOTPExtractor()
-    
-    return extractor.get_otp_from_email(client, target_email)
-
-
-def extract_otp_from_uber_email(html_content: str) -> Optional[str]:
-    extractor = UberOTPExtractor()
-    return extractor.extract(html_content)
+if __name__ == "__main__":
+    asyncio.run(main())
