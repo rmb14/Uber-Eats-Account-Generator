@@ -14,7 +14,7 @@ This project was initially built for my personal education, as I was studying mo
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
-- [Contributing](#contributing)
+- [Use Hotmail](#hotmail)
 - [License](#license)
 
 <h2 id="features">🚀 Features</h2>
@@ -132,30 +132,28 @@ python main.py --debug
 2. **Generate using Hotmail**: Generates account using hotmail accounts from `hotmailaccs.txt` in `user:pass` format
 3. **Exit**: Safely exits the program
 
-### Data Flow
 
-1. **Initialization**: Load config, create device fingerprint
-2. **Email Signup**: Submit email to initiate process
-3. **OTP Retrieval**: Monitor email for verification code
-4. **OTP Submission**: Submit code to verify email
-5. **Registration**: Complete remaining steps
-6. **Finalization**: Save account details
+<h2 id="hotmail">Using Hotmail</h2>
 
-<h2 id="contributing">🤝 Contributing</h2>
+To use the **Generate using Hotmail** menu option, follow these steps:
 
-We welcome contributions that enhance the educational value of this project:
+1. **Purchase Hotmail Accounts**  
+   Buy Hotmail accounts from a reputable provider such as [hotmail007.com](https://hotmail007.com/).
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/enhancement`)
-3. Commit your changes (`git commit -m 'Add educational feature'`)
-4. Push to the branch (`git push origin feature/enhancement`)
-5. Open a Pull Request
+2. **Prepare `hotmailaccs.txt`**  
+   After purchase, you will receive a list of Hotmail accounts in the format:
+   ```
+   user1@hotmail.com:password1
+   user2@hotmail.com:password2
+   ...
+   ```
+   Copy all these lines into a file named `hotmailaccs.txt` in the project directory.
 
-### Contribution Guidelines
-
-- Focus on educational value
-- Add comprehensive documentation
-- Include security implications
+3. **Run the Program**  
+   ```bash
+   python main.py
+   ```
+   When prompted in the menu, select **Generate using Hotmail**.
 
 <h2 id="license">📄 License</h2>
 

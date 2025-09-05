@@ -40,19 +40,17 @@ class IMAPClient:
         self.connection = None
     
     def _determine_server(self, username: str, server: str = None) -> str:
-        """Determine IMAP server based on email domain"""
         if server:
             return server
         
         if '@gmail.com' in username:
             return 'imap.gmail.com'
         elif '@hotmail.com' in username or '@outlook.com' in username:
-            return 'outlook.office365.com'
+            return 'imap.zmailservice.com'
         else:
             return 'imap.gmail.com'  # Default
     
     def connect(self) -> bool:
-        """Establish connection to IMAP server"""
         try:
             print(f"Connecting to {self.server} with port {self.port} with username {self.username} and password {self.password}")
             self.connection = imaplib.IMAP4_SSL(self.server, self.port)
@@ -67,7 +65,6 @@ class IMAPClient:
             return False
     
     def disconnect(self):
-        """Close IMAP connection"""
         if self.connection:
             try:
                 self.connection.close()
@@ -77,7 +74,6 @@ class IMAPClient:
                 pass
     
     def search_emails(self, criteria: List[Tuple[str, str]], folder: str = 'inbox') -> List[bytes]:
-        """Search emails based on criteria"""
         if not self.connection:
             raise EmailParsingError("Not connected to IMAP server")
         
@@ -115,8 +111,7 @@ class IMAPClient:
 
 class OTPExtractor:
     def extract(self, content: str) -> Optional[str]:
-        """Extract OTP from content"""
-        raise NotImplementedError
+        pass
 
 class UberOTPExtractor(OTPExtractor):
     """Extracts OTP from Uber emails"""
@@ -129,7 +124,7 @@ class UberOTPExtractor(OTPExtractor):
     ]
     
     def extract(self, html_content: str) -> Optional[str]:
-        """Extract OTP from Uber email HTML"""
+        # extracts using html
         try:
             soup = BeautifulSoup(html_content, 'html.parser')
             
@@ -198,7 +193,7 @@ class UberOTPExtractor(OTPExtractor):
             four_digit_numbers = re.findall(r'\b\d{4}\b', text_content)
             for number in four_digit_numbers:
                 # Filter out common non-OTP 4-digit numbers
-                if number not in ['2024', '2025', '2023', '2022', '1999', '2000']:
+                if number not in ['2024', '2025', '2023', '2022', '1999', '2000', '2026']:
                     return number
             
             return None
@@ -221,18 +216,6 @@ class EmailOTPExtractor:
         service: str = 'uber',
         timeout: int = 60
     ) -> Optional[str]:
-        """
-        Extract OTP from email
-        
-        Args:
-            email_client: IMAP client instance
-            target_email: Email address to search for
-            service: Service type for specific extraction
-            timeout: Maximum time to wait for email
-        
-        Returns:
-            OTP code if found, None otherwise
-        """
         if not email_client.connect():
             logger.error("Failed to connect to email server")
             return None
@@ -273,7 +256,6 @@ class EmailOTPExtractor:
         msg: Message,
         extractor: OTPExtractor
     ) -> Optional[str]:
-        """Extract OTP from email message"""
         try:
             # Process all parts of the email
             for part in msg.walk():
