@@ -158,6 +158,8 @@ backups/
 config.json.local
 config.json.backup
 *.bak
+notes.md
+proxies.txt
 
 # Sensitive data
 credentials.json

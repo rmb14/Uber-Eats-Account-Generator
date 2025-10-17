@@ -1,4 +1,5 @@
 # Uber Eats Account Generator
+
 Generate Uber Eats Accounts using IMAP or Hotmail Emails using Mobile Packets
 
 ## ⚠️ DISCLAIMER
@@ -14,146 +15,139 @@ This project was initially built for my personal education, as I was studying mo
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
-- [Use Hotmail](#hotmail)
+- [Hotmail Setup](#hotmail)
 - [License](#license)
 
 <h2 id="features">🚀 Features</h2>
 
- - Generate an email, name, and password automatically(email using gmails IMAP or given hotmail accounts user:pass format)
- - Simulate an account creation process as an Iphone user, using mitmproxy to intercept requests and responses, and python asyncio and curl_cffi to automate the process.
- - Extract the OTP from the email automatically using IMAP and BeautifulSoup.
- - Save the account details to a file.
-
- ### Additional Features
-  - Use imap domains to generate emails
-  - Automatically get OTP verification code from email
-  - Proxy support to avoid ip blocks
-  - Asynchronous and Session based requests
-  - Spoofing Device fingerprints and data(act like a real human)
-  - Logging
+- Generate accounts automatically using Gmail IMAP or Hotmail accounts
+- Batch account generation with progress tracking
+- Multi-domain support with random domain selection
+- Proxy support with multiple formats (ip:port, user:pass:ip:port, user:pass@ip:port)
+- Proxy cycling or random selection
+- Simulate iPhone user requests using mitmproxy intercepted packets
+- Extract OTP from emails automatically using IMAP and BeautifulSoup
+- Spoofed device fingerprints and data
 
 <h2 id="requirements">📦 Requirements</h2>
 
 ### System Requirements
+
 - Python 3.8 or higher
 
 ### Python Dependencies
+
 ```txt
 curl-cffi>=0.5.9
 beautifulsoup4>=4.12.0
 colorama>=0.4.6
-aiofiles>=23.0.0
-python-dotenv>=1.0.0
 ```
 
 ### Email Requirements
-- IMAP-enabled email account (for OTP extraction)
+
+- IMAP-enabled email account (Gmail with app password or Hotmail)
 
 <h2 id="installation">🛠️ Installation</h2>
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/yubunus/Uber-Eats-Account-Generator.git
 cd Uber-Eats-Account-Generator
 ```
 
-### 2. Create Virtual Environment
-```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
+### 2. Install Dependencies
 
-# macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install Dependencies
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-### 4. Configure Settings
+### 3. Configure Settings
+
 ```bash
 nano config.json
 ```
 
 <h2 id="configuration">⚙️ Configuration</h2>
 
-### Basic Configuration (config.json)
+### config.json
 
 ```json
 {
-  "proxy": "http://user:pass@proxy:port",
   "proxy_enabled": false,
+  "cycle_proxies": false,
   "imap": {
     "username": "your_email@gmail.com",
     "password": "your_app_password",
     "server": "imap.gmail.com",
-    "domain": "yourdomain.com"
-  },
-  "security": {
-    "use_proxy": true,
-    "rotate_user_agents": true,
-    "randomize_timing": true
+    "domains": ["yourdomain.com", "anotherdomain.com"]
   }
 }
 ```
 
 ### Configuration Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `proxy` | Proxy server URL | None |
-| `proxy_enabled` | Enable proxy usage | false |
-| `imap.username` | Email for OTP retrieval | Required |
-| `imap.password` | Email app password | Required |
-| `rate_limiting.requests_per_minute` | Max requests per minute | 10 |
-| `security.randomize_timing` | Add random delays | true |
+| Option           | Description                              | Default |
+| ---------------- | ---------------------------------------- | ------- |
+| `proxy_enabled`  | Enable proxy usage                       | false   |
+| `cycle_proxies`  | Cycle through proxies vs random selection| false   |
+| `imap.username`  | Email for OTP retrieval                  | Required|
+| `imap.password`  | Email app password                       | Required|
+| `imap.server`    | IMAP server                              | imap.gmail.com |
+| `imap.domains`   | List of domains for account generation   | Required|
+
+### Proxy Setup
+
+Create `proxies.txt` in the project directory with one proxy per line:
+
+```
+192.168.1.1:8080
+user:pass:192.168.1.2:8080
+user:pass@192.168.1.3:8080
+```
+
+Supported formats: `ip:port`, `user:pass:ip:port`, `user:pass@ip:port`
 
 <h2 id="usage">💻 Usage</h2>
 
 ### Basic Usage
 
 ```bash
-# Run the main program
-python main.py
-
-# Run with specific configuration
-python main.py --config custom_config.json
-
-# Run in debug mode
-python main.py --debug
+python cli.py
 ```
 
 ### Menu Options
 
-1. **Generate using IMAP**: Generates account using your personal domain and imap email
-2. **Generate using Hotmail**: Generates account using hotmail accounts from `hotmailaccs.txt` in `user:pass` format
-3. **Exit**: Safely exits the program
+1. **Generate using IMAP**: Generates accounts using your Gmail IMAP
+   - Asks how many accounts to generate
+   - Randomly selects domain from your configured domains list
+   - Shows success/failure summary
 
+2. **Generate using Hotmail**: Generates accounts using Hotmail from `hotmailaccs.txt`
+   - Shows available Hotmail accounts
+   - Asks how many to use (0 for all)
+   - Shows success/failure summary
+
+3. **Exit**: Safely exits the program
 
 <h2 id="hotmail">Using Hotmail</h2>
 
-To use the **Generate using Hotmail** menu option, follow these steps:
+1. **Purchase Hotmail Accounts**
+   Buy Hotmail accounts from a provider such as [hotmail007.com](https://hotmail007.com/).
 
-1. **Purchase Hotmail Accounts**  
-   Buy Hotmail accounts from a reputable provider such as [hotmail007.com](https://hotmail007.com/).
+2. **Prepare `hotmailaccs.txt`**
+   Create a file named `hotmailaccs.txt` in the project directory:
 
-2. **Prepare `hotmailaccs.txt`**  
-   After purchase, you will receive a list of Hotmail accounts in the format:
    ```
    user1@hotmail.com:password1
    user2@hotmail.com:password2
-   ...
    ```
-   Copy all these lines into a file named `hotmailaccs.txt` in the project directory.
 
-3. **Run the Program**  
+3. **Run the Program**
    ```bash
-   python main.py
+   python cli.py
    ```
-   When prompted in the menu, select **Generate using Hotmail**.
+   Select **Generate using Hotmail** from the menu.
 
 <h2 id="license">📄 License</h2>
 
