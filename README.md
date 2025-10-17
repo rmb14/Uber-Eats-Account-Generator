@@ -1,6 +1,7 @@
 # Uber Eats Account Generator
 
 Generate Uber Eats Accounts using IMAP or Hotmail Emails using Mobile Packets
+by @yubunus on discord and telegram - nuunuu1923@gmail.com
 
 ## ⚠️ DISCLAIMER
 
@@ -87,14 +88,14 @@ nano config.json
 
 ### Configuration Options
 
-| Option           | Description                              | Default |
-| ---------------- | ---------------------------------------- | ------- |
-| `proxy_enabled`  | Enable proxy usage                       | false   |
-| `cycle_proxies`  | Cycle through proxies vs random selection| false   |
-| `imap.username`  | Email for OTP retrieval                  | Required|
-| `imap.password`  | Email app password                       | Required|
-| `imap.server`    | IMAP server                              | imap.gmail.com |
-| `imap.domains`   | List of domains for account generation   | Required|
+| Option          | Description                               | Default        |
+| --------------- | ----------------------------------------- | -------------- |
+| `proxy_enabled` | Enable proxy usage                        | false          |
+| `cycle_proxies` | Cycle through proxies vs random selection | false          |
+| `imap.username` | Email for OTP retrieval                   | Required       |
+| `imap.password` | Email app password                        | Required       |
+| `imap.server`   | IMAP server                               | imap.gmail.com |
+| `imap.domains`  | List of domains for account generation    | Required       |
 
 ### Proxy Setup
 
@@ -119,11 +120,13 @@ python cli.py
 ### Menu Options
 
 1. **Generate using IMAP**: Generates accounts using your Gmail IMAP
+
    - Asks how many accounts to generate
    - Randomly selects domain from your configured domains list
    - Shows success/failure summary
 
 2. **Generate using Hotmail**: Generates accounts using Hotmail from `hotmailaccs.txt`
+
    - Shows available Hotmail accounts
    - Asks how many to use (0 for all)
    - Shows success/failure summary
