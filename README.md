@@ -88,14 +88,15 @@ nano config.json
 
 ### Configuration Options
 
-| Option          | Description                               | Default        |
-| --------------- | ----------------------------------------- | -------------- |
-| `proxy_enabled` | Enable proxy usage                        | false          |
-| `cycle_proxies` | Cycle through proxies vs random selection | false          |
-| `imap.username` | Email for OTP retrieval                   | Required       |
-| `imap.password` | Email app password                        | Required       |
-| `imap.server`   | IMAP server                               | imap.gmail.com |
-| `imap.domains`  | List of domains for account generation    | Required       |
+| Option          | Description                                | Default        |
+| --------------- | ------------------------------------------ | -------------- |
+| `proxy_enabled` | Enable proxy usage                         | false          |
+| `cycle_proxies` | Cycle through proxies vs random selection  | false          |
+| `auto_get_otp`  | Auto get OTP from emails, otherwise manual | true           |
+| `imap.username` | Email for OTP retrieval                    | Required       |
+| `imap.password` | Email app password                         | Required       |
+| `imap.server`   | IMAP server                                | imap.gmail.com |
+| `imap.domains`  | List of domains for account generation     | Required       |
 
 ### Proxy Setup
 

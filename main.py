@@ -699,11 +699,14 @@ class AccountGenerator:
             print("[!] Failed to initiate signup")
             return None
 
-        print("[*] Waiting for OTP...")
-        await asyncio.sleep(5)
+        if self.config.get('auto_get_otp', True):
+            print("[*] Waiting for OTP...")
+            await asyncio.sleep(5)
 
-        otp_extractor = EmailOTPExtractor()
-        otp = await otp_extractor.get_otp_async(email_client, email)
+            otp_extractor = EmailOTPExtractor()
+            otp = await otp_extractor.get_otp_async(email_client, email)
+        else:
+            otp = input(f"Please Enter OTP for {email}: ")
 
         if not otp:
             print("[!] Failed to retrieve OTP")
