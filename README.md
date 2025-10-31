@@ -7,7 +7,14 @@ by @yubunus on discord and telegram - nuunuu1923@gmail.com
 
 This project was initially built for my personal education, as I was studying mobile requests using mitmproxy, and python requests and automation vs a bigger corporation with higher end security and a multi-step authentication process. That being said, this project is not intended to be used whatsoever as it is against Ubers TOS, and it is purely and only for educational purposes.
 
----
+## Latest Update V 1.7
+
+- Added multi-device registration support(switch from iphone/android)
+- Updated device data and headers to use latest phones: Iphone 17 & Google Pixel 9 Pro
+- Added option to automatically save cookies and device data upon registration
+- Option to automatically apply a promo code upon registration
+
+Hotmail007's imap.zmailservice.com is currently down. Hotmail otp grabber will not work. Please manually enter otp's for the time being.
 
 ## 📋 Table of Contents
 
@@ -26,9 +33,11 @@ This project was initially built for my personal education, as I was studying mo
 - Multi-domain support with random domain selection
 - Proxy support with multiple formats (ip:port, user:pass:ip:port, user:pass@ip:port)
 - Proxy cycling or random selection
-- Simulate iPhone user requests using mitmproxy intercepted packets
+- Simulate Android or iOS device requests using mitmproxy intercepted packets
 - Extract OTP from emails automatically using IMAP and BeautifulSoup
 - Spoofed device fingerprints and data
+- Optional data persistence (cookies, device data, device info)
+- Automatic promo code application to new accounts
 
 <h2 id="requirements">📦 Requirements</h2>
 
@@ -75,8 +84,19 @@ nano config.json
 
 ```json
 {
+  "device": "android",
   "proxy_enabled": false,
   "cycle_proxies": false,
+  "auto_get_otp": true,
+  "save_info": {
+    "cookies": false,
+    "device_data": false,
+    "device_info": true
+  },
+  "promos": {
+    "auto_apply": false,
+    "promo_code": "promo_code_here"
+  },
   "imap": {
     "username": "your_email@gmail.com",
     "password": "your_app_password",
@@ -88,15 +108,23 @@ nano config.json
 
 ### Configuration Options
 
-| Option          | Description                                | Default        |
-| --------------- | ------------------------------------------ | -------------- |
-| `proxy_enabled` | Enable proxy usage                         | false          |
-| `cycle_proxies` | Cycle through proxies vs random selection  | false          |
-| `auto_get_otp`  | Auto get OTP from emails, otherwise manual | true           |
-| `imap.username` | Email for OTP retrieval                    | Required       |
-| `imap.password` | Email app password                         | Required       |
-| `imap.server`   | IMAP server                                | imap.gmail.com |
-| `imap.domains`  | List of domains for account generation     | Required       |
+| Option                  | Description                                | Default        |
+| ----------------------- | ------------------------------------------ | -------------- |
+| `device`                | Device type to simulate (android/ios)      | android        |
+| `proxy_enabled`         | Enable proxy usage                         | false          |
+| `cycle_proxies`         | Cycle through proxies vs random selection  | false          |
+| `auto_get_otp`          | Auto get OTP from emails, otherwise manual | true           |
+| `save_info.cookies`     | Save account cookies to file               | false          |
+| `save_info.device_data` | Save device data to file                   | false          |
+| `save_info.device_info` | Save device info to file                   | true           |
+| `promos.auto_apply`     | Automatically apply promo code             | false          |
+| `promos.promo_code`     | Promo code to apply to new accounts        | Required\*     |
+| `imap.username`         | Email for OTP retrieval                    | Required       |
+| `imap.password`         | Email app password                         | Required       |
+| `imap.server`           | IMAP server                                | imap.gmail.com |
+| `imap.domains`          | List of domains for account generation     | Required       |
+
+\*Required only if `promos.auto_apply` is enabled
 
 ### Proxy Setup
 

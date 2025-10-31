@@ -1,7 +1,17 @@
 {
+  "device": "android",
   "proxy_enabled": false,
   "cycle_proxies": false,
   "auto_get_otp": true,
+  "save_info": {
+    "cookies": false,
+    "device_data": false,
+    "account_info": true
+  },
+  "promos": {
+    "auto_apply": false,
+    "promo_code": "promo_code_here"
+  },
   "imap": {
     "username": "your_email@gmail.com",
     "password": "your_app_password",

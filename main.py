@@ -12,16 +12,17 @@ import random
 import asyncio
 import time
 from typing import Dict, Optional, Tuple, List
-from dataclasses import dataclass, asdict
 from pathlib import Path
 from curl_cffi import requests
+import secrets
 
 from otp import EmailOTPExtractor, IMAPClient
 
 
 ENDPOINTS = {
     "submit_form": "https://auth.uber.com/v2/submit-form",
-    "submit_form_geo": "https://cn-geo1.uber.com/rt/silk-screen/submit-form"
+    "submit_form_geo": "https://cn-geo1.uber.com/rt/silk-screen/submit-form",
+    "apply_promo_code": "https://cn-phx2.cfe.uber.com/rt/delivery/v1/consumer/apply-and-get-savings"
 }
 
 FIRST_NAMES = [
@@ -39,61 +40,90 @@ LAST_NAMES = [
 ]
 
 
-@dataclass
-class DeviceInfo:
-    env_id: str
-    device_name: str
-    version: str
-    device_os_name: str
-    rooted: bool
-    location_service_enabled: bool
-    device_os_version: str
-    battery_status: str
-    env_checksum: str
-    device_ids: Dict[str, str]
-    ip_address: str
-    source_app: str
-    battery_level: float
-    epoch: float
-    device_model: str
-    lib_count: int
-    wifi_connected: bool
-    cpu_abi: str
-    version_checksum: str
+def generate_device_info():
+    with open('config.json', 'r') as f:
+        chosen_device = json.load(f)['device']
 
+    BATTERY_STATUSES = [
+        "charging",
+        "discharging"
+    ]
+    android_id = secrets.token_hex(8)
 
-class DeviceSpoofer:
-    DEVICE_MODELS = ["iPhone8,4", "iPhone10,3", "iPhone12,5", "iPhone13,2", "iPhone14,6"]
-    BATTERY_STATUSES = ["full", "charging", "discharging"]
+    shared_info = {
+        "batteryLevel": 1.0,
+        "batteryStatus": random.choice(BATTERY_STATUSES),
+        "carrier": "",
+        "carrierMcc": "",
+        "carrierMnc": "",
+        "course": 0.0,
+        "deviceAltitude": 0.0,
+        "deviceLatitude": 0.0,
+        "deviceLongitude": 0.0,
+        "emulator": False,
+        "horizontalAccuracy": 0.0,
+        "ipAddress": f"{random.randint(10, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
+        "libCount": random.randint(600, 1000),
+        "locationServiceEnabled": False,
+        "mockGpsOn": False,
+        "rooted": False,
+        "sourceApp": "eats",
+        "specVersion": "2.0",
+        "speed": 0.0,
+        "systemTimeZone": "America/New_York",
+        "unknownItems": {"a": []},
+        "version": "6.294.10000",
+        "versionChecksum": str(uuid.uuid4()).upper(),
+        "verticalAccuracy": 0.0,
+        "wifiConnected": True
+    }
 
-    @classmethod
-    def generate_device_info(cls) -> DeviceInfo:
-        return DeviceInfo(
-            env_id=uuid.uuid4().hex,
-            device_name="iPhone",
-            version=f"6.{random.randint(100, 999)}.{random.randint(10000, 99999)}",
-            device_os_name="iOS",
-            rooted=False,
-            location_service_enabled=False,
-            device_os_version=f"{random.randint(13, 17)}.{random.randint(0, 9)}.{random.randint(0, 9)}",
-            battery_status=random.choice(cls.BATTERY_STATUSES),
-            env_checksum=uuid.uuid4().hex,
-            device_ids={
-                "advertiserId": str(uuid.uuid4()),
-                "uberId": str(uuid.uuid4()).upper(),
-                "perfId": str(uuid.uuid4()).upper(),
-                "vendorId": str(uuid.uuid4()).upper()
-            },
-            ip_address=f"{random.randint(10, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
-            source_app="eats",
-            battery_level=round(random.uniform(0.5, 1.0), 2),
-            epoch=time.time() * 1000,
-            device_model=random.choice(cls.DEVICE_MODELS),
-            lib_count=random.randint(600, 1000),
-            wifi_connected=True,
-            cpu_abi=f"{random.randint(10000000, 20000000)}-{random.randint(0, 1)}",
-            version_checksum=str(uuid.uuid4()).upper()
-        )
+    ios_info = {
+        "device_name": "iPhone",
+        "device_os_name": "iOS",
+        "device_os_version": "26.0",
+        "device_model": "iPhone21,4",
+        "env_id": uuid.uuid4().hex,
+        "env_checksum": str(uuid.uuid4()).upper(),
+        "device_ids": {
+        "advertiserId": str(uuid.uuid4()),
+        "uberId": str(uuid.uuid4()).upper(),
+        "perfId": str(uuid.uuid4()).upper(),
+        "vendorId": str(uuid.uuid4()).upper()
+        },
+        "epoch": time.time() * 1000,
+    }
+
+    android_info = {
+        "deviceModel": "Pixel 9 Pro",
+        "deviceOsName": "Android",
+        "deviceOsVersion": "16",
+        "cpuAbi": "arm64-v8a, armeabi-v7a, armeabi",
+        "androidId": android_id,
+        "deviceIds": {
+            "androidId": android_id,
+            "appDeviceId": str(uuid.uuid4()),
+            "drmId": str(uuid.uuid4()).upper(),
+            "googleAdvertisingId": str(uuid.uuid4()).upper(),
+            "installationUuid": str(uuid.uuid4()).upper(),
+            "perfId": str(uuid.uuid4()).upper(),
+            "udid": str(uuid.uuid4()).upper(),
+            "unknownItems": {"a": []}
+        },
+        "epoch": {"value": time.time() * 1000},
+    }
+
+    ios_device_data = {
+        **shared_info,
+        **ios_info
+    }
+
+    android_device_data = {
+        **shared_info,
+        **android_info
+    }
+
+    return ios_device_data if chosen_device == "ios" else android_device_data
 
 
 class ProxyManager:
@@ -152,6 +182,7 @@ class ProxyManager:
 class RequestHandler:
     def __init__(self, proxy_manager: Optional[ProxyManager] = None):
         self.proxy_manager = proxy_manager
+        self.session = requests.Session()
 
     async def post(self, name: str, url: str, headers: Dict, data: Dict) -> Optional[requests.Response]:
         proxies = None
@@ -161,7 +192,7 @@ class RequestHandler:
                 proxies = {'http': proxy, 'https': proxy}
 
         try:
-            response = requests.post(
+            response = self.session.post(
                 url,
                 headers=headers,
                 json=data,
@@ -187,7 +218,7 @@ class AccountGenerator:
         self.config = self._load_config(config_path)
         self.proxy_manager = self._init_proxy_manager()
         self.request_handler = RequestHandler(self.proxy_manager)
-        self.device_info = DeviceSpoofer.generate_device_info()
+        self.device_info = generate_device_info()
 
     def _load_config(self, config_path: str) -> Dict:
         try:
@@ -216,6 +247,13 @@ class AccountGenerator:
         email = f"{first_name.lower()}{last_name.lower()}{random.randint(1000, 9999)}@{domain}"
         return email, name
 
+    def _get_user_agent(self) -> str:
+        device = self.config.get('device', 'android').lower()
+        if device == 'ios':
+            return "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
+        else:
+            return "Mozilla/5.0 (Linux; Android 16; Pixel 9 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36"
+
     def _get_headers(self) -> Dict:
         return {
             "Accept": "*/*",
@@ -231,7 +269,7 @@ class AccountGenerator:
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-site",
-            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36",
+            "User-Agent": self._get_user_agent(),
             "Via": "1.1 martian-a6a2b0967dba8230c0eb",
             "X-Uber-Analytics-Session-Id": "ecf13d6e-caa1-4848-9cc8-deb332d3212e",
             "X-Uber-App-Device-Id": "cea7e57f-cf80-397c-909c-241a9384b974",
@@ -265,7 +303,7 @@ class AccountGenerator:
                     "additionalParams": {
                         "isEmailUpdatePostAuth": False
                     },
-                    "deviceData": json.dumps(asdict(self.device_info)),
+                    "deviceData": json.dumps(self.device_info),
                     "codeChallenge": "XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
                     "uslURL": "https://auth.uber.com/v2?x-uber-device=iphone&x-uber-client-name=eats&x-uber-client-version=6.213.10001&x-uber-client-id=com.ubercab.UberEats&countryCode=US&firstPartyClientID=S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z&isiOSCustomTabSessionClose=true&showPasskeys=true&x-uber-app-variant=ubereats&x-uber-hot-launch-id=7AE26A95-AC62-4DB2-BF6E-E36308EBDCFD&socialNative=afg&x-uber-cold-launch-id=2A5D3FCB-0D28-48D5-81D7-5224D5C963C1&x-uber-device-udid=6968C387-69C6-48B6-9600-51986944428C&is_root=false&known_user=true&codeChallenge=XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
                     "firstPartyClientID": "S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z",
@@ -301,7 +339,7 @@ class AccountGenerator:
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-origin",
-            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.26",
+            "User-Agent": self._get_user_agent(),
             "Via": "1.1 martian-a6a2b2967dba8230c0eb",
             "X-Csrf-Token": "x",
             "X-Uber-Analytics-Session-Id": "ecf13d6e-cab1-4848-9cc8-deb332d3212e",
@@ -377,23 +415,25 @@ class AccountGenerator:
             return response.json().get('inAuthSessionID')
         return None
 
-    async def complete_registration(self, email: str, name: str, session_id: str) -> bool:
+    async def complete_registration(self, email: str, name: str, session_id: str) -> Tuple[bool, Optional[str], Optional[str]]:
         session_id = await self._skip_submit(session_id)
         if not session_id:
-            return False
+            return False, None, None
 
         session_id = await self._submit_name(session_id, name)
         if not session_id:
-            return False
+            return False, None, None
 
         session_id, auth_code = await self._submit_legal_confirmation(session_id)
         if not session_id or not auth_code:
-            return False
+            return False, None, None
 
-        await self._submit_auth_code(session_id, auth_code)
-        return True
+        result = await self._submit_auth_code(session_id, auth_code, email, name)
+        return result
 
     async def _skip_submit(self, session_id: str) -> Optional[str]:
+        client_app_version = self.device_info.get('version', '6.294.10000')
+
         data = {
             "formContainerAnswer": {
                 "inAuthSessionID": session_id,
@@ -416,7 +456,7 @@ class AccountGenerator:
                     "additionalParams": {
                         "isEmailUpdatePostAuth": False
                     },
-                    "deviceData": "{\"epoch\":1744515031438.7422,\"locationServiceEnabled\":false,\"deviceName\":\"iPhone\",\"batteryStatus\":\"full\",\"ipAddress\":\"192.168.1.192\",\"deviceOsName\":\"iOS\",\"libCount\":798,\"versionChecksum\":\"3EBBC1C9-7121-3FAD-B2F9-D583E923BCB8\",\"cpuAbi\":\"16777228-1\",\"deviceIds\":{\"advertiserId\":\"00000000-0000-0000-0000-000000000000\",\"perfId\":\"5BD175B2-34B2-5F7C-AC9B-1E7C95E30F4D\",\"vendorId\":\"E1AACDAB-9CDC-4E1D-91D6-3D64429FA6C4\",\"uberId\":\"6968C387-69C6-48B6-9600-51986944428C\"},\"sourceApp\":\"eats\",\"version\":\"6.213.10001\",\"deviceOsVersion\":\"15.8.4\",\"wifiConnected\":true,\"envChecksum\":\"730f96a786fb9d89f39ff62a8b68f8a1\",\"rooted\":false,\"envId\":\"ed5d1b6a92a39c69a5ffd24904a3eca8\",\"batteryLevel\":1,\"deviceModel\":\"iPhone8,4\"}",
+                    "deviceData": json.dumps(self.device_info),
                     "codeChallenge": "XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
                     "uslURL": "https://auth.uber.com/v2?x-uber-device=iphone&x-uber-client-name=eats&x-uber-client-version=6.213.10001&x-uber-client-id=com.ubercab.UberEats&countryCode=US&firstPartyClientID=S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z&isiOSCustomTabSessionClose=true&showPasskeys=true&x-uber-app-variant=ubereats&x-uber-hot-launch-id=7AE26A95-AC62-4DB2-BF6E-E36308EBDCFD&socialNative=afg&x-uber-cold-launch-id=2A5D3FCB-0D28-48D5-81D7-5224D5C963C1&x-uber-device-udid=6968C387-69C6-48B6-9600-51986944428C&is_root=false&known_user=true&codeChallenge=XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
                     "firstPartyClientID": "S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z",
@@ -431,10 +471,11 @@ class AccountGenerator:
             }
         }
 
+        device = self.config.get('device', 'android').lower()
         headers = {
             'Referer': 'https://auth.uber.com/',
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_8_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
-            'X-Uber-Client-Version': '6.213.10001',
+            'User-Agent': self._get_user_agent(),
+            'X-Uber-Client-Version': client_app_version,
             'X-Uber-Client-Name': 'eats',
             'X-Uber-App-Variant': 'ubereats',
             'Origin': 'https://auth.uber.com',
@@ -442,7 +483,7 @@ class AccountGenerator:
             'X-Uber-Client-Id': 'com.ubercab.UberEats',
             'Accept': '*/*',
             'Content-Type': 'application/json',
-            'X-Uber-Device': 'iphone',
+            'X-Uber-Device': 'iphone' if device == 'ios' else 'android',
         }
 
         response = await self.request_handler.post(
@@ -458,6 +499,7 @@ class AccountGenerator:
 
     async def _submit_name(self, session_id: str, name: str) -> Optional[str]:
         first_name, last_name = name.split(' ', 1)
+        client_app_version = self.device_info.get('version', '6.294.10000')
 
         data = {
             "formContainerAnswer": {
@@ -481,7 +523,7 @@ class AccountGenerator:
                     "additionalParams": {
                         "isEmailUpdatePostAuth": False
                     },
-                    "deviceData": "{\"epoch\":1744515031438.7422,\"locationServiceEnabled\":false,\"deviceName\":\"iPhone\",\"batteryStatus\":\"full\",\"ipAddress\":\"192.168.1.192\",\"deviceOsName\":\"iOS\",\"libCount\":798,\"versionChecksum\":\"3EBBC1C9-7121-3FAD-B2F9-D583E923BCB8\",\"cpuAbi\":\"16777228-1\",\"deviceIds\":{\"advertiserId\":\"00000000-0000-0000-0000-000000000000\",\"perfId\":\"5BD175B2-34B2-5F7C-AC9B-1E7C95E30F4D\",\"vendorId\":\"E1AACDAB-9CDC-4E1D-91D6-3D64429FA6C4\",\"uberId\":\"6968C387-69C6-48B6-9600-51986944428C\"},\"sourceApp\":\"eats\",\"version\":\"6.213.10001\",\"deviceOsVersion\":\"15.8.4\",\"wifiConnected\":true,\"envChecksum\":\"730f96a786fb9d89f39ff62a8b68f8a1\",\"rooted\":false,\"envId\":\"ed5d1b6a92a39c69a5ffd24904a3eca8\",\"batteryLevel\":1,\"deviceModel\":\"iPhone8,4\"}",
+                    "deviceData": json.dumps(self.device_info),
                     "codeChallenge": "XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
                     "uslURL": "https://auth.uber.com/v2?x-uber-device=iphone&x-uber-client-name=eats&x-uber-client-version=6.213.10001&x-uber-client-id=com.ubercab.UberEats&countryCode=US&firstPartyClientID=S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z&isiOSCustomTabSessionClose=true&showPasskeys=true&x-uber-app-variant=ubereats&x-uber-hot-launch-id=7AE26A95-AC62-4DB2-BF6E-E36308EBDCFD&socialNative=afg&x-uber-cold-launch-id=2A5D3FCB-0D28-48D5-81D7-5224D5C963C1&x-uber-device-udid=6968C387-69C6-48B6-9600-51986944428C&is_root=false&known_user=true&codeChallenge=XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
                     "firstPartyClientID": "S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z",
@@ -505,10 +547,11 @@ class AccountGenerator:
             }
         }
 
+        device = self.config.get('device', 'android').lower()
         headers = {
             'Referer': 'https://auth.uber.com/',
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_8_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
-            'X-Uber-Client-Version': '6.213.10001',
+            'User-Agent': self._get_user_agent(),
+            'X-Uber-Client-Version': client_app_version,
             'X-Uber-Client-Name': 'eats',
             'X-Uber-App-Variant': 'ubereats',
             'Origin': 'https://auth.uber.com',
@@ -516,7 +559,7 @@ class AccountGenerator:
             'X-Uber-Client-Id': 'com.ubercab.UberEats',
             'Accept': '*/*',
             'Content-Type': 'application/json',
-            'X-Uber-Device': 'iphone',
+            'X-Uber-Device': 'iphone' if device == 'ios' else 'android',
         }
 
         response = await self.request_handler.post(
@@ -553,7 +596,7 @@ class AccountGenerator:
                     "additionalParams": {
                         "isEmailUpdatePostAuth": False
                     },
-                    "deviceData": "{\"epoch\":1744515031438.7422,\"locationServiceEnabled\":false,\"deviceName\":\"iPhone\",\"batteryStatus\":\"full\",\"ipAddress\":\"192.168.1.192\",\"deviceOsName\":\"iOS\",\"libCount\":798,\"versionChecksum\":\"3EBBC1C9-7121-3FAD-B2F9-D583E923BCB8\",\"cpuAbi\":\"16777228-1\",\"deviceIds\":{\"advertiserId\":\"00000000-0000-0000-0000-000000000000\",\"perfId\":\"5BD175B2-34B2-5F7C-AC9B-1E7C95E30F4D\",\"vendorId\":\"E1AACDAB-9CDC-4E1D-91D6-3D64429FA6C4\",\"uberId\":\"6968C387-69C6-48B6-9600-51986944428C\"},\"sourceApp\":\"eats\",\"version\":\"6.213.10001\",\"deviceOsVersion\":\"15.8.4\",\"wifiConnected\":true,\"envChecksum\":\"730f96a786fb9d89f39ff62a8b68f8a1\",\"rooted\":false,\"envId\":\"ed5d1b6a92a39c69a5ffd24904a3eca8\",\"batteryLevel\":1,\"deviceModel\":\"iPhone8,4\"}",
+                    "deviceData": json.dumps(self.device_info),
                     "codeChallenge": "XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
                     "uslURL": "https://auth.uber.com/v2?x-uber-device=iphone&x-uber-client-name=eats&x-uber-client-version=6.213.10001&x-uber-client-id=com.ubercab.UberEats&countryCode=US&firstPartyClientID=S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z&isiOSCustomTabSessionClose=true&showPasskeys=true&x-uber-app-variant=ubereats&x-uber-hot-launch-id=7AE26A95-AC62-4DB2-BF6E-E36308EBDCFD&socialNative=afg&x-uber-cold-launch-id=2A5D3FCB-0D28-48D5-81D7-5224D5C963C1&x-uber-device-udid=6968C387-69C6-48B6-9600-51986944428C&is_root=false&known_user=true&codeChallenge=XQt42Ii1O9Qzg69ULyVHcQs8uvhvIznGQniUsVI-mEA",
                     "firstPartyClientID": "S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z",
@@ -584,10 +627,12 @@ class AccountGenerator:
             }
         }
 
+        device = self.config.get('device', 'android').lower()
+        client_app_version = self.device_info.get('version', '6.294.10000')
         headers = {
             'Referer': 'https://auth.uber.com/',
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_8_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
-            'X-Uber-Client-Version': '6.213.10001',
+            'User-Agent': self._get_user_agent(),
+            'X-Uber-Client-Version': client_app_version,
             'X-Uber-Client-Name': 'eats',
             'X-Uber-App-Variant': 'ubereats',
             'Origin': 'https://auth.uber.com',
@@ -595,7 +640,7 @@ class AccountGenerator:
             'X-Uber-Client-Id': 'com.ubercab.UberEats',
             'Accept': '*/*',
             'Content-Type': 'application/json',
-            'X-Uber-Device': 'iphone',
+            'X-Uber-Device': 'iphone' if device == 'ios' else 'android',
         }
 
         response = await self.request_handler.post(
@@ -618,7 +663,7 @@ class AccountGenerator:
 
         return None, None
 
-    async def _submit_auth_code(self, session_id: str, auth_code: str) -> bool:
+    async def _submit_auth_code(self, session_id: str, auth_code: str, email: str = '', name: str = '') -> Tuple[bool, Optional[str], Optional[str]]:
         data = {
             "formContainerAnswer": {
                 "formAnswer": {
@@ -641,7 +686,7 @@ class AccountGenerator:
                         }
                     ],
                     "standardFlow": True,
-                    "deviceData": "{\"envId\":\"ed5d1b6a92a39c69a5ffd24904a3eca8\",\"deviceName\":\"iPhone\",\"version\":\"6.213.10001\",\"deviceOsName\":\"iOS\",\"rooted\":false,\"locationServiceEnabled\":false,\"deviceOsVersion\":\"15.8.4\",\"batteryStatus\":\"full\",\"envChecksum\":\"730f96a786fb9d89f39ff62a8b68f8a1\",\"deviceIds\":{\"advertiserId\":\"00000000-0000-0000-0000-000000000000\",\"uberId\":\"6968C387-69C6-48B6-9600-51986944428C\",\"perfId\":\"5BD175B2-34B2-5F7C-AC9B-1E7C95E30F4D\",\"vendorId\":\"E1AACDAB-9CDC-4E1D-91D6-3D64429FA6C4\"},\"ipAddress\":\"192.168.1.192\",\"sourceApp\":\"eats\",\"batteryLevel\":1,\"epoch\":1744515031438.7422,\"deviceModel\":\"iPhone8,4\",\"libCount\":798,\"wifiConnected\":true,\"cpuAbi\":\"16777228-1\",\"versionChecksum\":\"3EBBC1C9-7121-3FAD-B2F9-D583E923BCB8\"}",
+                    "deviceData": json.dumps(self.device_info),
                     "firstPartyClientID": "S_Fwp1YMY1qAlAf5-yfYbeb7cfJE-50z",
                     "flowType": "SIGN_IN"
                 },
@@ -649,30 +694,34 @@ class AccountGenerator:
             }
         }
 
+        device = self.config.get('device', 'android').lower()
+        is_ios = device == 'ios'
+        client_app_version = self.device_info.get('version', '6.294.10000')
+        
         headers = {
             'Accept': '*/*',
             'X-Uber-Device-Location-Services-Enabled': '0',
             'X-Uber-Device-Language': 'en_US',
-            'User-Agent': '/iphone/6.213.10001',
+            'User-Agent': '/iphone/' + client_app_version if is_ios else '/android/' + client_app_version,
             'X-Uber-Eats-App-Installed': '0',
             'X-Uber-App-Lifecycle-State': 'foreground',
             'X-Uber-Request-Uuid': str(uuid.uuid4()),
             'X-Uber-Device-Time-24-Format-Enabled': '0',
-            'X-Uber-Device-Location-Provider': 'ios_core',
+            'X-Uber-Device-Location-Provider': 'ios_core' if is_ios else 'network',
             'X-Uber-Markup-Textformat-Version': '1',
             'X-Uber-Device-Voiceover': '0',
-            'X-Uber-Device-Model': 'iPhone8,4',
+            'X-Uber-Device-Model': 'iPhone21,4' if is_ios else 'Pixel 9 Pro',
             'Accept-Language': 'en-US;q=1',
             'X-Uber-Redirectcount': '0',
-            'X-Uber-Device-Os': '15.8.4',
+            'X-Uber-Device-Os': '18.0' if is_ios else '16',
             'X-Uber-Network-Classifier': 'fast',
-            'X-Uber-Client-Version': '6.213.10001',
+            'X-Uber-Client-Version': client_app_version,
             'X-Uber-App-Variant': 'ubereats',
             'X-Uber-Device-Id-Tracking-Enabled': '0',
             'X-Uber-Client-Id': 'com.ubercab.UberEats',
             'X-Uber-Client-Name': 'eats',
             'Content-Type': 'application/json',
-            'X-Uber-Device': 'iphone',
+            'X-Uber-Device': 'iphone' if is_ios else 'android',
             'X-Uber-Client-User-Session-Id': 'D7354EFE-AFB4-439E-8C9F-1AB8047DF1B5',
             'X-Uber-Device-Ids': 'aaid:00000000-0000-0000-0000-000000000000',
             'X-Uber-Device-Id': '6968C387-69C6-48B6-9600-51986944428C',
@@ -685,7 +734,94 @@ class AccountGenerator:
             data
         )
 
-        return response is not None
+        # save device information(if enabled in console)
+        save_info = self.config.get('save_info', {})
+        
+        try:
+            with open('genned_accs.json', 'r') as f:
+                accs = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            accs = []
+
+        account_information = {}
+        if save_info.get('cookies', False):
+            # Save all cookies from the session, not just from the last response
+            account_information['cookies'] = self.request_handler.session.cookies.get_dict()
+        if save_info.get('device_data', False):
+            account_information['device_data'] = self.device_info
+        if save_info.get('account_info', False):
+            account_information['account_info'] = {'email': email, 'name': name}
+
+        accs.append(account_information)
+
+        try:
+            with open('genned_accs.json', 'w') as f:
+                json.dump(accs, f, indent=4)
+        except Exception as e:
+            print(f"[!] Failed to save account information: {e}")
+
+        if response:
+            # get auth_code and user_uuid for future requests
+            resp_json = response.json()
+            oauth_info = resp_json.get('oAuthInfo')
+            auth_code = oauth_info.get('accessToken', None) if oauth_info else None
+            user_uuid = resp_json.get('userUUID', None)
+            return True, auth_code, user_uuid
+        else:
+            return False, None, None
+
+    
+    async def _apply_promo_code(self, auth_code: str, user_uuid: str, promo_code: str) -> bool:
+        data = {
+            'request': {
+                'savingsInfo': {
+                    'code': promo_code,
+                },
+                'userUuid': user_uuid,
+                'ctaType': 'BROWSE',
+            },
+        }
+
+        headers = {
+            'x-uber-device-mobile-iso2': 'US',
+            'x-uber-device': 'android',
+            'x-uber-device-language': 'en_US',
+            'user-agent': 'Cronet/129.0.6668.102@aa3a5623',
+            'authorization': f'Bearer {auth_code}',
+            'x-uber-device-os': '10',
+            'x-uber-device-sdk': '29',
+            'x-uber-client-version': '6.294.10000',
+            'x-uber-device-manufacturer': 'samsung',
+            'x-uber-device-id': str(uuid.uuid4()),
+            'x-uber-markup-textformat-version': '1',
+            'x-uber-device-model': 'SM-G965U1',
+            'uberctx-mobile-initiated': 'true',
+            'x-uber-app-variant': 'ubereats',
+            'content-type': 'application/json; charset=UTF-8',
+            'x-uber-network-classifier': 'FAST',
+            'x-uber-token': 'no-token',
+            'x-uber-client-id': 'com.ubercab.eats',
+            'x-uber-app-lifecycle-state': 'foreground',
+            'x-uber-protocol-version': '0.73.0',
+            'x-uber-device-timezone': 'America/New_York',
+            'x-uber-client-name': 'eats',
+            'x-uber-device-voiceover': '0',
+            'priority': 'u=1, i',
+        }
+
+        response = await self.request_handler.post(
+            "Apply Promo Code",
+            ENDPOINTS['apply_promo_code'],
+            headers,
+            data
+        )
+
+        if response and response.json().get('chocolateChipCookieError'):
+            return False
+        elif response:
+            return True
+        else:
+            return False
 
     async def create_account(self, domain: str, email_client: IMAPClient) -> Optional[str]:
         email, name = self.generate_user_info(domain)
@@ -719,14 +855,26 @@ class AccountGenerator:
             print("[!] Failed to verify OTP")
             return None
 
-        if await self.complete_registration(email, name, session_id):
-            print("[✓] Account created successfully!")
-            self._save_account(email)
-            return email
-        else:
+        success, auth_code, user_uuid = await self.complete_registration(email, name, session_id)
+        if not success:
             print("[!] Failed to complete registration")
             return None
 
-    def _save_account(self, email: str):
+        if self.config['promos'].get('auto_apply', False):
+            promo_code = self.config['promos'].get('promo_code', '')
+            if not promo_code:
+                print("[!] Promo code not provided")
+
+            success = await self._apply_promo_code(auth_code, user_uuid, promo_code)
+            if success:
+                print("[✓] Promo code applied successfully!")
+            else:
+                print("[!] Failed to apply promo code")
+
+        print("[✓] Account created successfully!")
+        self._save_account(email, name)
+        return email
+
+    def _save_account(self, email: str, name: str = ''):
         with open('accounts.txt', 'a') as f:
             f.write(f'{email}\n')
